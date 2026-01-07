@@ -16,6 +16,8 @@ jobs:
   publish:
     name: publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -40,10 +42,9 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.MUX_NPM_TOKEN || secrets.NPM_TOKEN }}
 
-      - name: Upload DXT file to release
-        if: github.event_name == 'release'
+      - name: Upload MCP Server DXT GitHub release asset
         run: |
           gh release upload ${{ github.event.release.tag_name }} \
-            packages/mcp-server/dxt/mux.dxt#mux-mcp.dxt
+            packages/mcp-server/mux.dxt
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

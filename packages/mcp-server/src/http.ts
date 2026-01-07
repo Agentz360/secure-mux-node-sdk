@@ -5,8 +5,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 
 import cors from 'cors';
 import express from 'express';
-import { fromError } from 'zod-validation-error/v3';
-import { McpOptions, parseQueryOptions } from './options';
+import { McpOptions } from './options';
 import { ClientOptions, initMcpServer, newMcpServer } from './server';
 import { parseAuthHeaders } from './headers';
 
@@ -17,30 +16,14 @@ const oauthResourceIdentifier = (req: express.Request): string => {
 
 const newServer = ({
   clientOptions,
-  mcpOptions: defaultMcpOptions,
   req,
   res,
 }: {
   clientOptions: ClientOptions;
-  mcpOptions: McpOptions;
   req: express.Request;
   res: express.Response;
 }): McpServer | null => {
   const server = newMcpServer();
-
-  let mcpOptions: McpOptions;
-  try {
-    mcpOptions = parseQueryOptions(defaultMcpOptions, req.query);
-  } catch (error) {
-    res.status(400).json({
-      jsonrpc: '2.0',
-      error: {
-        code: -32000,
-        message: `Invalid request: ${fromError(error)}`,
-      },
-    });
-    return null;
-  }
 
   try {
     const authOptions = parseAuthHeaders(req);
@@ -50,9 +33,8 @@ const newServer = ({
         ...clientOptions,
         ...authOptions,
       },
-      mcpOptions,
     });
-  } catch {
+  } catch (error) {
     const resourceIdentifier = oauthResourceIdentifier(req);
     res.set(
       'WWW-Authenticate',
@@ -62,7 +44,7 @@ const newServer = ({
       jsonrpc: '2.0',
       error: {
         code: -32000,
-        message: 'Unauthorized',
+        message: `Unauthorized: ${error instanceof Error ? error.message : error}`,
       },
     });
     return null;
